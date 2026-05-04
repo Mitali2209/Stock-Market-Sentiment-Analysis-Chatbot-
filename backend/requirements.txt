@@ -6,4 +6,4 @@ nltk
 python-dotenv
 pydantic
 praw
-yahooquery
+jugaad-data

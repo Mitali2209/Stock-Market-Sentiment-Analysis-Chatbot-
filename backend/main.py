@@ -72,35 +72,10 @@ def chat(data: dict):
 
 @app.get("/history/{symbol}")
 def history(symbol: str, period: str = "1mo"):
-    try:
-        from yahooquery import Ticker
-        interval = "5m" if period == "1d" else "1d"
-        hist = Ticker(symbol).history(period=period, interval=interval)
-        
-        if isinstance(hist, dict):
-            return {"error": "no data"}
-            
-        if hist.empty:
-            return {"error": "no data"}
-
-        hist = hist.reset_index()
-        
-        data = []
-        for _, row in hist.iterrows():
-            d = row['date']
-            close_price = round(row['close'], 2)
-            
-            if period == "1d":
-                date_str = d.strftime("%H:%M") if hasattr(d, 'strftime') else str(d)
-            else:
-                date_str = str(d)[:10] # YYYY-MM-DD
-                
-            data.append({"date": date_str, "close": close_price})
-            
-        return {"data": data}
-    except Exception as e:
-        print(f"History error: {e}")
-        return {"error": "no data"}
+    # Yahoo Finance aggressively blocks Render IPs, preventing historical chart data fetches.
+    # Finnhub requires a premium subscription for international charts.
+    # To prevent the app from crashing, we gracefully disable the chart here.
+    return {"error": "no data"}
 
 @app.get("/")
 def read_index():
