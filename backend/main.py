@@ -10,6 +10,12 @@ import yfinance as yf
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 import os
+import requests
+
+session = requests.Session()
+session.headers.update({
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36"
+})
 
 app = FastAPI()
 
@@ -69,7 +75,7 @@ def chat(data: dict):
 def history(symbol: str, period: str = "1mo"):
     try:
         interval = "5m" if period == "1d" else "1d"
-        hist = yf.Ticker(symbol).history(period=period, interval=interval)
+        hist = yf.Ticker(symbol, session=session).history(period=period, interval=interval)
         
         if period == "1d":
             data = [{"date": d.strftime("%H:%M"), "close": round(row["Close"], 2)} for d, row in hist.iterrows()]

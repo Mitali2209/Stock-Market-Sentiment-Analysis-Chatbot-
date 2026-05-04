@@ -1,10 +1,16 @@
 import yfinance as yf
+import requests
+
+session = requests.Session()
+session.headers.update({
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36"
+})
 
 def fetch_financial_metrics(symbol):
     try:
         # Finnhub symbol might be AAPL, but for Indian stocks it's RELIANCE.NS. 
         # yfinance uses Yahoo ticker format. We assume the symbol passed is valid.
-        stock = yf.Ticker(symbol)
+        stock = yf.Ticker(symbol, session=session)
         info = stock.info
         
         # Yahoo finance returns empty dict if the ticker is totally invalid
