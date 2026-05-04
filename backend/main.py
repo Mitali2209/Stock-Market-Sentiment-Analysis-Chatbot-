@@ -6,7 +6,6 @@ from services.social_service import fetch_social_sentiment
 from services.ai_service import chatbot
 import statistics
 from services.stock_data_service import fetch_financial_metrics
-import yfinance as yf
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 import os
@@ -74,13 +73,29 @@ def chat(data: dict):
 @app.get("/history/{symbol}")
 def history(symbol: str, period: str = "1mo"):
     try:
+        from yahooquery import Ticker
         interval = "5m" if period == "1d" else "1d"
-        hist = yf.Ticker(symbol, session=session).history(period=period, interval=interval)
+        hist = Ticker(symbol).history(period=period, interval=interval)
         
-        if period == "1d":
-            data = [{"date": d.strftime("%H:%M"), "close": round(row["Close"], 2)} for d, row in hist.iterrows()]
-        else:
-            data = [{"date": str(d.date()), "close": round(row["Close"], 2)} for d, row in hist.iterrows()]
+        if isinstance(hist, dict):
+            return {"error": "no data"}
+            
+        if hist.empty:
+            return {"error": "no data"}
+
+        hist = hist.reset_index()
+        
+        data = []
+        for _, row in hist.iterrows():
+            d = row['date']
+            close_price = round(row['close'], 2)
+            
+            if period == "1d":
+                date_str = d.strftime("%H:%M") if hasattr(d, 'strftime') else str(d)
+            else:
+                date_str = str(d)[:10] # YYYY-MM-DD
+                
+            data.append({"date": date_str, "close": close_price})
             
         return {"data": data}
     except Exception as e:

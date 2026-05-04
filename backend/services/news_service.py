@@ -6,43 +6,33 @@ from dotenv import load_dotenv
 load_dotenv()
 API_KEY = os.getenv("FINNHUB_API_KEY")
 
+import datetime
+
 def fetch_news(symbol):
     """
-    Fetch news using yfinance as a reliable alternative to Finnhub.
+    Fetch news using Finnhub.
     """
     try:
-        session = requests.Session()
-        session.headers.update({
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36"
-        })
-        stock = yf.Ticker(symbol, session=session)
-        yf_news = stock.news
+        end_date = datetime.datetime.now().strftime('%Y-%m-%d')
+        start_date = (datetime.datetime.now() - datetime.timedelta(days=7)).strftime('%Y-%m-%d')
+        url = f"https://finnhub.io/api/v1/company-news?symbol={symbol}&from={start_date}&to={end_date}&token={API_KEY}"
+        news_data = requests.get(url, timeout=10).json()
         
-        if not yf_news:
-            print(f"DEBUG: No news found for {symbol} via yfinance")
+        if not news_data:
+            print(f"DEBUG: No news found for {symbol} via Finnhub")
             return []
 
         articles = []
         # Take up to 8 articles for better distribution
-        for item in yf_news[:8]:
-            # Handle both old and new yfinance news formats
-            content = item.get("content", item)
-            
-            # Extract URL from nested dictionaries if necessary
-            raw_url = content.get("canonicalUrl", content.get("clickThroughUrl", content.get("link", "#")))
-            if isinstance(raw_url, dict):
-                url = raw_url.get("url", "#")
-            else:
-                url = raw_url
-
+        for item in news_data[:8]:
             articles.append({
-                "title": content.get("title", "No Title"),
-                "url": url
+                "title": item.get("headline", "No Title"),
+                "url": item.get("url", "#")
             })
 
         return articles
     except Exception as e:
-        print(f"DEBUG: News Error (yfinance): {e}")
+        print(f"DEBUG: News Error (Finnhub): {e}")
         return []
 
 def get_stock_symbol(stock_name):
